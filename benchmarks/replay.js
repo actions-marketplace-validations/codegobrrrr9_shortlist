@@ -25,6 +25,10 @@ const g = (a, cwd = work) => { const r = spawnSync('git', a, { cwd, encoding: 'u
 
 mkdirSync(join(here, 'work'), { recursive: true });
 if (!existsSync(work)) g(['clone', '-q', '--filter=blob:none', '--depth', String(N * 3 + 10), '--single-branch', url, work], here);
+// always replay the same window: the last N commits of the default branch tip
+const branch = g(['symbolic-ref', '--quiet', 'refs/remotes/origin/HEAD']).trim().replace('refs/remotes/origin/', '');
+g(['checkout', '-q', '-f', branch]);
+g(['reset', '-q', '--hard', 'origin/' + branch]);
 const commits = g(['log', '--no-merges', '--format=%H', '-n', String(N)]).trim().split('\n');
 const cfg = flag('--config', '');
 const rows = [];
@@ -39,7 +43,7 @@ for (const c of commits) {
   if (cfg) rmSync(join(work, '.shortlist.json'), { force: true });
   process.stdout.write(`${c.slice(0, 8)}  ${r.full ? 'FULL' : String(r.selected.length).padStart(4)} / ${r.total}  ${r.ms}ms  ${r.full ? r.reasons[0].slice(0, 70) : ''}\n`);
 }
-g(['checkout', '-q', '-']);
+g(['checkout', '-q', '-f', branch]);
 
 const ok = rows.filter(r => !r.error && r.total > 0);
 const ran = ok.map(r => r.full ? r.total : r.selected);

@@ -193,6 +193,45 @@ test('a dynamic import with a computed path depends on its whole directory', () 
   } finally { r.done(); }
 });
 
+test('an import of a directory with a trailing slash resolves to its index', () => {
+  const r = repo({ ...TSAPP, 'src/index.ts': "export * from './api';\n", 'src/helper/x.test.ts': "import { get } from '../../src/';\nimport { o } from '../';\n" });
+  try {
+    r.change({ 'src/api.ts': "import { make } from '@/model';\nexport const get = () => make(2);\n" });
+    assert.ok(r.sel().selected.includes('src/helper/x.test.ts'));
+  } finally { r.done(); }
+});
+
+// The automatic JSX runtime is injected by the compiler; no source file imports it.
+const JSXAPP = {
+  'package.json': JSON.stringify({ name: 'ui', devDependencies: { vitest: '4' } }),
+  'tsconfig.json': JSON.stringify({ compilerOptions: { jsx: 'react-jsx', jsxImportSource: 'ui/jsx' } }),
+  'src/jsx/jsx-runtime.ts': "export { jsx } from './base';\n",
+  'src/jsx/jsx-dev-runtime.ts': "export { jsx as jsxDEV } from './base';\n",
+  'src/jsx/base.ts': 'export const jsx = () => null;\n',
+  'src/dom/jsx-runtime.ts': 'export const jsx = () => 1;\n',
+  'src/card.test.tsx': 'test("x", () => <div />);\n',
+  'src/pragma.test.tsx': '/** @jsxImportSource ./dom */\ntest("y", () => <p />);\n',
+  'src/plain.test.ts': 'test("z", () => 1);\n',
+};
+
+test('JSX: tsconfig jsxImportSource naming the package itself makes every .tsx depend on the runtime', () => {
+  const r = repo(JSXAPP);
+  try {
+    r.change({ 'src/jsx/base.ts': 'export const jsx = () => undefined;\n' });
+    assert.deepEqual(r.sel().selected, ['src/card.test.tsx', 'src/pragma.test.tsx']);
+  } finally { r.done(); }
+});
+
+test('JSX: vitest config importSource and a per-file pragma are both followed', () => {
+  const r = repo({ ...JSXAPP, 'tsconfig.json': JSON.stringify({ compilerOptions: { jsx: 'react-jsx' } }), 'vitest.config.ts': "export default { test: {}, oxc: { jsx: { runtime: 'automatic', importSource: './src/jsx' } } };\n" });
+  try {
+    r.change({ 'src/jsx/base.ts': 'export const jsx = () => 0;\n' });
+    assert.deepEqual(r.sel().selected, ['src/card.test.tsx', 'src/pragma.test.tsx']);
+    r.change({ 'src/jsx/base.ts': JSXAPP['src/jsx/base.ts'], 'src/dom/jsx-runtime.ts': 'export const jsx = () => 2;\n' });
+    assert.deepEqual(r.sel().selected, ['src/pragma.test.tsx']);
+  } finally { r.done(); }
+});
+
 // ---- monorepo -----------------------------------------------------------------------------
 
 const MONO = {

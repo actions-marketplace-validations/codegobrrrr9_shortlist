@@ -67,7 +67,7 @@ for (const f of sample) {
     const F = run.ok ? [...run.failed].filter(t => !base.failed.has(t)) : [];
     const misses = F.filter(t => !S.has(t));
     rows.push({ file: f, selected: S.size, failed: F.length, misses, full: s.full, ok: run.ok });
-    console.log(`${misses.length ? 'MISS' : 'ok  '}  ${f}  selected ${S.size}, actually failed ${F.length}${misses.length ? '  missed: ' + misses.join(', ') : ''}`);
+    console.log(`${misses.length ? 'MISS' : 'ok  '}  ${f}  selected ${S.size}, actually failed ${F.length}${misses.length ? '  missed: ' + misses.join(', ') : ''}${s.full ? `  [FULL-SUITE FALLBACK: ${s.reasons[0]}]` : ''}`);
   } finally { writeFileSync(abs, orig); }
 }
 

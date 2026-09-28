@@ -36,7 +36,7 @@ const DEFAULT_TESTS = [
 ];
 const DEFAULT_IGNORE = [
   '**/*.md', '**/*.mdx', 'docs/**', '**/LICENSE*', '**/CHANGELOG*', '**/.gitignore', '**/.gitattributes',
-  '**/.editorconfig', '.vscode/**', '.idea/**', '.github/ISSUE_TEMPLATE/**', '.github/*.md', '**/.prettierrc*',
+  '**/.editorconfig', '**/.vscode/**', '**/.idea/**', '.github/ISSUE_TEMPLATE/**', '.github/*.md', '**/.prettierrc*',
   '**/.prettierignore', '.shortlist-cache/**', '**/.npmignore', '**/.dockerignore', '**/CODEOWNERS', '.github/*.yml',
   '.github/*.yaml', '**/renovate.json', '**/.eslintrc*', '**/eslint.config.*', '**/.oxlintrc*', '**/.oxfmtrc*',
   '**/biome.json', '**/.markdownlint*', '**/.lintstagedrc*', '**/.husky/**', '**/SECURITY*', '**/CONTRIBUTING*', '**/AGENTS.md',
@@ -193,6 +193,8 @@ function workspaces(root, files) {
     }
     pkgs.push({ name: pj.name, dir: d, entry });
   }
+  // a package can import itself by name ("hono/jsx" inside hono); treat the root package like a workspace
+  if (rootPkg.name && !pkgs.some(p => p.name === rootPkg.name)) pkgs.push({ name: rootPkg.name, dir: '', entry: null });
   return pkgs.sort((a, b) => b.name.length - a.name.length);
 }
 
@@ -219,14 +221,16 @@ function tsconfigs(root, files) {
 
 function makeJsResolver(fileSet, pkgs, tscs) {
   const tryPath = (p) => {
-    p = posix.normalize(p).replace(/^\.\//, '');
+    p = posix.normalize(p).replace(/^\.\//, '').replace(/\/+$/, '');
+    if (p === '.') p = '';
     if (p.startsWith('..')) return null;
-    if (fileSet.has(p)) return p;
-    for (const e of JS_RESOLVE_EXT) if (fileSet.has(p + e)) return p + e;
+    if (p && fileSet.has(p)) return p;
+    if (p) for (const e of JS_RESOLVE_EXT) if (fileSet.has(p + e)) return p + e;
     const swapped = p.replace(/\.(m|c)?js$/, (m, x) => '.' + (x || '') + 'ts');
     if (swapped !== p) { if (fileSet.has(swapped)) return swapped; if (fileSet.has(swapped + 'x')) return swapped + 'x'; }
     if (/\.jsx$/.test(p) && fileSet.has(p.replace(/\.jsx$/, '.tsx'))) return p.replace(/\.jsx$/, '.tsx');
-    for (const e of JS_RESOLVE_EXT) if (fileSet.has(p + '/index' + e)) return p + '/index' + e;
+    const pre = p ? p + '/' : '';
+    for (const e of JS_RESOLVE_EXT) if (fileSet.has(pre + 'index' + e)) return pre + 'index' + e;
     return null;
   };
   return (from, spec) => {
@@ -346,11 +350,36 @@ export function buildGraph(root, files, cfg) {
   const code = files.filter(f => CODE_JS.test(f) || CODE_PY.test(f));
   const addDep = (a, b) => { if (!b || a === b) return; (deps.get(a) || deps.set(a, new Set()).get(a)).add(b); };
   const wildDirs = [];
+  // The automatic JSX runtime is imported by the compiler, not by the source. Every .tsx/.jsx file
+  // depends on <importSource>/jsx-runtime and /jsx-dev-runtime, from tsconfig, the vite/vitest
+  // config, or a per-file @jsxImportSource pragma.
+  const jsxRuntimeFiles = (fromFile, source) => {
+    const out = [];
+    for (const leaf of ['jsx-runtime', 'jsx-dev-runtime']) {
+      const r = resolveJs(fromFile, source.replace(/\/+$/, '') + '/' + leaf);
+      if (r.file) out.push(r.file);
+    }
+    return out;
+  };
+  const globalJsx = [];
+  for (const f of files) {
+    if (/(^|\/)(tsconfig|jsconfig)[^/]*\.json$/.test(f)) {
+      const s = parseJsonc(readText(root, f))?.compilerOptions?.jsxImportSource;
+      if (typeof s === 'string') globalJsx.push(...jsxRuntimeFiles((dirOf(f) ? dirOf(f) + '/' : '') + '__cfg.ts', s));
+    } else if (/(^|\/)(vite|vitest|vitest\.workspace|babel)\.config\.[cm]?[jt]s$|(^|\/)\.babelrc|(^|\/)\.swcrc$/.test(f)) {
+      for (const m of readText(root, f).matchAll(/\b(?:jsxImportSource|importSource)["']?\s*:\s*['"]([^'"]+)['"]/g)) globalJsx.push(...jsxRuntimeFiles((dirOf(f) ? dirOf(f) + '/' : '') + '__cfg.ts', m[1]));
+    }
+  }
   for (const f of code) {
     const src = readText(root, f);
     if (CODE_JS.test(f)) {
       const { specs, dynamic: dyn } = jsImports(src);
       for (const s of specs) { const r = resolveJs(f, s); if (r.file) addDep(f, r.file); else if (r.wildDir) wildDirs.push([f, r.wildDir]); }
+      if (/\.[jt]sx$/.test(f)) {
+        const pragma = /@jsxImportSource\s+(\S+)/.exec(src.slice(0, 2000));
+        for (const g of pragma ? jsxRuntimeFiles(f, pragma[1]) : globalJsx) addDep(f, g);
+        if (pragma) for (const g of globalJsx) addDep(f, g); // configs can override the pragma at build time
+      }
       if (dyn) { dynamic.push(f); wildDirs.push([f, dirOf(f)]); }
     } else {
       const { mods, dynamic: dyn } = pyImports(src);
@@ -390,7 +419,7 @@ export function select(opts = {}) {
 
   for (const { path: p, status } of changed) {
     if (isIgnored(p)) continue;
-    if (p.startsWith('.github/workflows/')) {
+    if (p.startsWith('.github/workflows/') || p.startsWith('.github/actions/')) {
       // a workflow only matters if it is the one that runs the tests
       const text = status === 'D' ? (git(['show', `${base.ref}:${p}`], root) || 'test') : readText(root, p);
       if (/\b(npm (run )?test|pnpm (run )?test|yarn test|bun test|vitest|jest|mocha|pytest|tox|node --test|shortlist)\b/i.test(text)) fullBecause(`${p} changed (it runs the tests)`);

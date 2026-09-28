@@ -24,17 +24,21 @@ Import-graph test selection for JS/TS and Python. One zero-dependency file, a Gi
 ```
 
 On a pull request that runs only the test files the diff can reach, with the right runner per
-workspace package, and writes a summary to the job page:
+workspace package, and writes a summary to the job page. A real run on
+[hono](https://github.com/honojs/hono) after editing one utility file:
 
 ```
-shortlist  base origin/main (a1b2c3d)  ·  3 files changed  ·  412ms
-RUN 7 of 142 test files  (95% skipped)
-  src/user.test.ts        ← imports src/user.ts
-  src/api.test.ts         ← imports src/user.ts
-  src/billing.test.ts     ← imports src/api.ts
-  ...
+shortlist  base HEAD (d7fb697)  ·  1 file changed  ·  756ms
+RUN 7 of 137 test files  (95% skipped)
+  src/helper/dev/index.test.ts          ← imports src/utils/filepath.ts
+  src/hono.test.ts                      ← imports src/utils/filepath.ts
+  src/middleware/logger/index.test.ts   ← imports src/utils/filepath.ts
+  src/preset/quick.test.ts              ← imports src/utils/filepath.ts
+  src/preset/tiny.test.ts               ← imports src/utils/filepath.ts
+  src/utils/color.test.ts               ← imports src/utils/filepath.ts
+  src/utils/filepath.test.ts            ← imports src/utils/filepath.ts
 
-npx vitest run src/user.test.ts src/api.test.ts src/billing.test.ts ...
+npx vitest run src/helper/dev/index.test.ts src/hono.test.ts src/middleware/logger/index.test.ts ...
 ```
 
 Keep the full suite where it belongs: on `main` and on a schedule. The pattern people are moving to
@@ -103,17 +107,38 @@ shortlist --list | --json | --github
 
 **How much it skips.** Replaying the last 40 commits of real repos, no configuration:
 
-_Replay table lands here from [`benchmarks/replay.jsonl`](benchmarks/)._
+| Repo | Kind | Test files | Skipped over 40 commits | Median files run | Full-suite fallbacks | Needed no tests | Graph time |
+|---|---|---|---|---|---|---|---|
+| [TanStack/query](https://github.com/TanStack/query) | TS monorepo · Vitest | 282 | **90%** | 1 | 3 | 3 | 1.8s |
+| [fastify/fastify](https://github.com/fastify/fastify) | JS library · node:test | 194 | **81%** | 62 | 0 | 15 | 0.5s |
+| [honojs/hono](https://github.com/honojs/hono) | TS framework · Vitest | 138 | **61%** | 28 | 9 | 6 | 0.7s |
+| [date-fns/date-fns](https://github.com/date-fns/date-fns) | TS library, shared helpers · Vitest | 264 | **45%** | 231 | 6 | 12 | 1.6s |
+| [pallets/click](https://github.com/pallets/click) | Python library · pytest | 34 | **21%** | 34 | 7 | 6 | 0.4s |
+
+The spread is the honest part. A monorepo, where a change in one package cannot reach the others, skips almost everything. A library whose tests all go through one shared helper, like date-fns, or through one package `__init__`, like click, skips far less, because every change really does reach most tests. Fallbacks are dependency bumps, lockfiles, tool-version files and the CI workflow that runs the tests.
 
 **Whether it skips anything it shouldn't.** The number that matters. For sampled source files in a
 real repo, the benchmark injects a runtime failure, runs the full suite, and checks that every test
 file that actually failed was on the shortlist:
 
-_Mutation table lands here from [`benchmarks/mutate.jsonl`](benchmarks/)._
+| Target | Break-it runs | Test files that really failed | Missed by shortlist | Avg selected |
+|---|---|---|---|---|
+| hono · random source files | 25 | 341 | **0** | 31.9 of 138 |
+| hono · JSX runtime, targeted | 3 | 43 | **0** | 27.3 of 138 |
+| TanStack query-core · random source files | 20 | 314 | **0** | 40.1 of 41 |
 
-25 unit tests build real git repos for every rule above: transitive imports, index resolution,
+**48 break-it runs, 698 test files that really failed, 0 missed.** Every file is broken on import, the real suite runs, and the benchmark compares what failed with what shortlist picked.
+
+This benchmark earned its keep before it passed. Its first honest run on hono missed 31 failing test files, which exposed two bugs, both now fixed and covered by unit tests:
+
+- an import of a directory with a trailing slash (`from '../../'`) resolved to nothing, and
+- the automatic JSX runtime is injected by the compiler, so no source file imports it. shortlist now reads `jsxImportSource` from tsconfig, `importSource` from Vite/Vitest config, and `@jsxImportSource` pragmas.
+
+One note on query-core: its tests import through the package index, so every change reaches 40 of 41 test files. Safe, and no faster within that package. The savings in that repo come from the other packages a change cannot reach.
+
+28 unit tests build real git repos for every rule above: transitive imports, index resolution,
 `.js`→`.ts` specifiers, tsconfig aliases, workspaces, deletions, renames, Python packages and
-conftest scope, metadata-only edits, every fail-safe.
+conftest scope, the JSX runtime, metadata-only edits, every fail-safe.
 
 ## Runners
 
@@ -132,7 +157,7 @@ In a monorepo each package gets its own runner and working directory. Override w
 
 ```json
 {
-  "tests": ["src/**/test.ts"],
+  "tests": ["tests/**/*.e2e.ts"],
   "ignore": ["examples/**"],
   "full": ["scripts/codegen/**"],
   "always": ["tests/smoke.test.ts"],
