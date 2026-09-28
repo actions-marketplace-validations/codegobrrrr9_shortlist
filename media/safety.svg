@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#0b0f14"/>
+  <text x="80" y="105" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" fill="#c9d4e0" font-weight="bold">48 files broken on purpose. 698 test files really failed. 0 missed.</text>
+  <text x="80" y="152" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" fill="#8899aa">Break a source file, run the real suite, check every failing test was on the shortlist (hono, TanStack query-core)</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28">
+    <rect x="80" y="195" width="450" height="180" rx="16" fill="#111821" stroke="#1f2a36" stroke-width="2"/>
+    <text x="305" y="290" text-anchor="middle" fill="#c9d4e0" font-size="72" font-weight="bold">48</text>
+    <text x="305" y="340" text-anchor="middle" fill="#8899aa">break-it runs</text>
+    <rect x="575" y="195" width="450" height="180" rx="16" fill="#111821" stroke="#1f2a36" stroke-width="2"/>
+    <text x="800" y="290" text-anchor="middle" fill="#c9d4e0" font-size="72" font-weight="bold">698</text>
+    <text x="800" y="340" text-anchor="middle" fill="#8899aa">test files that really failed</text>
+    <rect x="1070" y="195" width="450" height="180" rx="16" fill="#111821" stroke="#1f3a2a" stroke-width="2"/>
+    <text x="1295" y="290" text-anchor="middle" fill="#7fd1a8" font-size="72" font-weight="bold">0</text>
+    <text x="1295" y="340" text-anchor="middle" fill="#8899aa">missed by shortlist</text>
+  </g>
+  <text x="80" y="440" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" fill="#c9d4e0" font-weight="bold">Share of test files skipped, last 40 commits, no config</text>
+  <g font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26">
+    <text x="110" y="500" fill="#c9d4e0">TanStack/query (monorepo)</text><rect x="520" y="470" width="810" height="40" rx="6" fill="#2e7d5b"/><text x="1345" y="500" fill="#7fd1a8" font-weight="bold">90%</text>
+    <text x="110" y="560" fill="#c9d4e0">fastify</text><rect x="520" y="530" width="729" height="40" rx="6" fill="#2e7d5b"/><text x="1264" y="560" fill="#7fd1a8" font-weight="bold">81%</text>
+    <text x="110" y="620" fill="#c9d4e0">hono</text><rect x="520" y="590" width="549" height="40" rx="6" fill="#2e7d5b"/><text x="1084" y="620" fill="#7fd1a8" font-weight="bold">61%</text>
+    <text x="110" y="680" fill="#c9d4e0">date-fns (shared helpers)</text><rect x="520" y="650" width="405" height="40" rx="6" fill="#2e7d5b"/><text x="940" y="680" fill="#7fd1a8" font-weight="bold">45%</text>
+    <text x="110" y="740" fill="#c9d4e0">click (Python)</text><rect x="520" y="710" width="189" height="40" rx="6" fill="#2e7d5b"/><text x="724" y="740" fill="#7fd1a8" font-weight="bold">21%</text>
+  </g>
+  <text x="80" y="850" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" fill="#6b7a8c">github.com/codegobrrrr9/shortlist · the first honest run missed 31 files and exposed two bugs, both fixed · benchmarks in the repo</text>
+</svg>

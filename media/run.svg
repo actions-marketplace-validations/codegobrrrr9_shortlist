@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <rect width="1600" height="900" fill="#0b0f14"/>
+  <text x="80" y="105" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="36" fill="#c9d4e0" font-weight="bold">One file changed. 137 test files in the repo. 7 can reach it.</text>
+  <text x="80" y="152" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="26" fill="#8899aa">A real shortlist run on honojs/hono after editing src/utils/filepath.ts</text>
+  <rect x="80" y="195" width="1440" height="600" rx="16" fill="#111821" stroke="#1f2a36" stroke-width="2"/>
+  <g font-family="Consolas, 'Courier New', monospace" font-size="27">
+    <text x="115" y="250" fill="#8899aa">shortlist  base HEAD (d7fb697)  ·  1 file changed  ·  756ms</text>
+    <text x="115" y="300" fill="#7fd1a8" font-weight="bold">RUN 7 of 137 test files  (95% skipped)</text>
+    <text x="145" y="350" fill="#c9d4e0">src/helper/dev/index.test.ts          <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="392" fill="#c9d4e0">src/hono.test.ts                      <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="434" fill="#c9d4e0">src/middleware/logger/index.test.ts   <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="476" fill="#c9d4e0">src/preset/quick.test.ts              <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="518" fill="#c9d4e0">src/preset/tiny.test.ts               <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="560" fill="#c9d4e0">src/utils/color.test.ts               <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="145" y="602" fill="#c9d4e0">src/utils/filepath.test.ts            <tspan fill="#6b7a8c">← imports src/utils/filepath.ts</tspan></text>
+    <text x="115" y="672" fill="#ffd166">npx vitest run src/helper/dev/index.test.ts src/hono.test.ts ...</text>
+    <text x="115" y="740" fill="#6b7a8c">Unsure (lockfile, dependency bump, test workflow)? It runs everything and says why.</text>
+  </g>
+  <text x="80" y="850" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="24" fill="#6b7a8c">github.com/codegobrrrr9/shortlist · uses: codegobrrrr9/shortlist@v1 · one Node file, zero dependencies</text>
+</svg>
