@@ -1,0 +1,33 @@
+name: test
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+  # shortlist on itself: the action from this checkout, computing only (the suite above already ran)
+  self:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: ./
+        id: shortlist
+        with:
+          run: 'false'
+      - run: |
+          echo "selected ${{ steps.shortlist.outputs.count }} of ${{ steps.shortlist.outputs.total }} (full=${{ steps.shortlist.outputs.full }})"
+          echo "cmd: ${{ steps.shortlist.outputs.cmd }}"

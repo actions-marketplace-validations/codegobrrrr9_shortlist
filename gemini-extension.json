@@ -1,0 +1,6 @@
+{
+  "name": "shortlist",
+  "version": "0.1.0",
+  "description": "Run only the tests your diff can reach.",
+  "contextFileName": "AGENTS.md"
+}

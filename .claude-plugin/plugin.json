@@ -1,0 +1,10 @@
+{
+  "name": "shortlist",
+  "version": "0.1.0",
+  "description": "Run only the tests your diff can reach. Import-graph test selection for JS/TS and Python, with a GitHub Action.",
+  "author": { "name": "codegobrrrr9", "url": "https://github.com/codegobrrrr9" },
+  "homepage": "https://github.com/codegobrrrr9/shortlist",
+  "repository": "https://github.com/codegobrrrr9/shortlist",
+  "license": "MIT",
+  "keywords": ["tests", "ci", "test-selection", "affected", "monorepo", "claude-code"]
+}

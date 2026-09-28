@@ -1,0 +1,65 @@
+name: shortlist
+description: Run only the tests your diff can reach. Import-graph test selection for JS/TS and Python that falls back to the full suite when it cannot be sure.
+author: codegobrrrr9
+branding:
+  icon: filter
+  color: green
+inputs:
+  base:
+    description: Ref to compare against. Default is the pull request base, then origin/HEAD, main, master.
+    required: false
+    default: ''
+  run:
+    description: Run the selected tests. Set to "false" to only compute them (read the outputs yourself).
+    required: false
+    default: 'true'
+  working-directory:
+    description: Repository root, if the action runs from elsewhere.
+    required: false
+    default: '.'
+outputs:
+  count:
+    description: Number of selected test files.
+    value: ${{ steps.pick.outputs.count }}
+  total:
+    description: Number of test files in the repository.
+    value: ${{ steps.pick.outputs.total }}
+  full:
+    description: '"true" when shortlist fell back to the full suite.'
+    value: ${{ steps.pick.outputs.full }}
+  skipped-percent:
+    description: Share of test files skipped.
+    value: ${{ steps.pick.outputs.skipped-percent }}
+  cmd:
+    description: The command that runs the selected tests.
+    value: ${{ steps.pick.outputs.cmd }}
+  tests:
+    description: Selected test files, newline separated.
+    value: ${{ steps.pick.outputs.tests }}
+  reason:
+    description: Why the full suite was chosen, when it was.
+    value: ${{ steps.pick.outputs.reason }}
+runs:
+  using: composite
+  steps:
+    - id: fetch
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        # A shallow checkout has no merge base. Fetch the PR base if it is missing.
+        if [ -n "${GITHUB_BASE_REF}" ] && ! git rev-parse --verify --quiet "origin/${GITHUB_BASE_REF}" >/dev/null; then
+          git fetch --no-tags --prune --quiet origin "+refs/heads/${GITHUB_BASE_REF}:refs/remotes/origin/${GITHUB_BASE_REF}" || true
+        fi
+        if [ -n "${GITHUB_BASE_REF}" ] && ! git merge-base "origin/${GITHUB_BASE_REF}" HEAD >/dev/null 2>&1; then
+          git fetch --no-tags --quiet --deepen=200 origin || true
+        fi
+    - id: pick
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SHORTLIST_BASE: ${{ inputs.base }}
+      run: node "${GITHUB_ACTION_PATH}/skills/shortlist/scripts/shortlist.js" --github
+    - if: inputs.run == 'true' && steps.pick.outputs.count != '0'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: ${{ steps.pick.outputs.cmd }}

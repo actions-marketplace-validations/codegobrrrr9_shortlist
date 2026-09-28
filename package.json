@@ -1,0 +1,14 @@
+{
+  "name": "shortlist-tests",
+  "version": "0.1.0",
+  "description": "Run only the tests your diff can reach. Import-graph test selection for JS/TS and Python, with a GitHub Action and an agent skill.",
+  "type": "module",
+  "bin": { "shortlist": "./skills/shortlist/scripts/shortlist.js" },
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "repository": { "type": "git", "url": "https://github.com/codegobrrrr9/shortlist" },
+  "keywords": ["tests", "ci", "test-selection", "affected-tests", "test-impact-analysis", "monorepo", "github-action", "claude-skills", "agent-skills"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}
