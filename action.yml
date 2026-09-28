@@ -1,5 +1,5 @@
 name: shortlist-tests
-description: Run only the tests your diff can reach. Import-graph test selection for JS/TS and Python that falls back to the full suite when it cannot be sure.
+description: Run only the tests your diff can reach. Import-graph test selection for JS/TS and Python; full suite when unsure.
 author: codegobrrrr9
 branding:
   icon: filter
