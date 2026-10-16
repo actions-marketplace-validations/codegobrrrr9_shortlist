@@ -17,7 +17,7 @@
 // cannot follow, an unknown base) makes it fall back to the full suite and say why.
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, existsSync, readdirSync, statSync, appendFileSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync, appendFileSync, realpathSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -615,7 +615,10 @@ function githubOutput(r) {
   return lines.join('\n');
 }
 
-const isMain = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+// Compare real paths: when the script is reached through a symlink or junction (~/.claude/skills/<name>),
+// import.meta.url is the resolved target while argv[1] is the link, and a plain string compare says "not main".
+const samePath = (a, b) => { try { return realpathSync(a) === realpathSync(b); } catch { return a === b; } };
+const isMain = process.argv[1] && samePath(fileURLToPath(import.meta.url), resolve(process.argv[1]));
 if (isMain) {
   const args = process.argv.slice(2);
   const flag = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : undefined; };
